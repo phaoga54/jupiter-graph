@@ -1,118 +1,89 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, SafeAreaView, useWindowDimensions, Text } from 'react-native';
+import { View, Text } from 'react-native';
 import Svg, { Defs, Path, Stop, LinearGradient } from "react-native-svg";
-
-export const HEIGHT = 480
-
+import tw from 'twrnc';
 import { scaleLinear } from "d3-scale";
-import DATA from './distance_data.json'
+import DATA from './step_data_jan_23rd.json'
+import DATA_24 from './step_data_jan_24th.json'
+import * as shape from "d3-shape";
+import moment from 'moment'
 
+const START_X = 4 * 60
+const FINISH_X = 24 * 60
 type DataChart = {
     x: number
     y: number
 }[]
-const STEPS = 15
 
-export const getLinePath = (data: DataChart, height: number, width: number) => {
-    const formattedValues = data.map(
-        (value) => [value?.x, value?.y]
-    );
-    const yArr = formattedValues.map((value) => value[1]);
-    const xArr = formattedValues.map((value) => value[0]);
-
-    const minY = Math.min(...yArr);
-    const maxY = Math.max(...yArr);
-
-    const scaleX = scaleLinear()
-        .domain([Math.min(...xArr), Math.max(...xArr)])
-        .range([0, width]);
-
-    const scaleY = scaleLinear().domain([minY, maxY]).range([0, height]);
-
-    let path = ''
-    for (let i = 0; i < data.length; i++) {
-        const prevX = i > 0 ? data[i - 1].x : 0
-        const prevY = i > 0 ? data[i - 1].y : 0
-        const x = data[i].x
-        const y = data[i].y
-
-        if (i == 0) path += `M ${scaleX(x)},${scaleY(y)}`
-        else if (y == 0) path += `M ${scaleX(prevX)},${scaleY(prevY)}`
-        else if (data[i - 1].y === 0) path += `M ${scaleX(x)},${scaleY(y)}`
-        else path += `L ${scaleX(x)},${scaleY(y)}`
-    }
-
-    return path
-}
-
-export const getFillLine = (data: DataChart, height: number, width: number) => {
-    const formattedValues = data.map(
-        (value) => [value?.x, value?.y]
-    );
-    const yArr = formattedValues.map((value) => value[1]);
-    const xArr = formattedValues.map((value) => value[0]);
-
-    const minY = Math.min(...yArr);
-    const maxY = Math.max(...yArr);
-
-    const scaleX = scaleLinear()
-        .domain([Math.min(...xArr), Math.max(...xArr)])
-        .range([0, width]);
-
-    const scaleY = scaleLinear().domain([minY, maxY]).range([0, height]);
-
-    let path = ''
-    for (let i = 0; i < data.length; i++) {
-
-        const prevX = i > 0 ? data[i - 1].x : 0
-        const rawX = data[i].x
-        const rawY = data[i].y
-        const x = scaleX(rawX)
-        const y = scaleY(rawY)
-
-        if (i == 0) path += `M ${x},${y}`
-        else if (rawY == 0) path += `L ${scaleX(prevX)},${scaleY(0)} L ${x},${y}`
-        else if (data[i - 1].y === 0) path += `L ${x},${scaleY(0)}, L ${x},${y}`
-        else path += `L ${x},${y}`
-    }
-
-    return path + `L ${scaleX(xArr[xArr.length - 1])},0`
-}
 export const Chart = ({ chartWidth, chartHeight }: { chartWidth: number, chartHeight: number }) => {
-    if(chartWidth==0) return null
-    const { width } = useWindowDimensions()
+    if (chartWidth == 0) return null
+
     const SVGHeight = chartHeight;
     const SVGWidth = chartWidth;
-    const [pathLine, setPathLine] = useState('M 0 0')
-    const [fillLine, setFillLine] = useState('M 0 0')
-    const [chartData, setChartData] = useState<{ x: number, y: number }[]>([])
+    const maxSteps = Math.max(...[...DATA.map(o => o.steps), ...DATA_24.map(o => o.steps)])
+    const minSteps = Math.min(...[...DATA.map(o => o.steps), ...DATA_24.map(o => o.steps)])
+
+    const [todayLine, setTodayLine] = useState('M 0 0')
+
+    const [yesterdayLine, setYesterdayLine] = useState('M 0 0')
+
+    const [todayData, setTodayData] = useState<{ x: number, y: number }[]>([])
+    const [yesterdayData, setYesterdayData] = useState<{ x: number, y: number }[]>([])
+
+    const scaleX = scaleLinear().domain([START_X, FINISH_X]).range([0, chartWidth]);
+    const scaleY = scaleLinear().domain([minSteps, maxSteps]).range([0, chartHeight - 5]);
+
+
+    const getLinePath = (data: DataChart) => {
+        const lastX = data[data.length - 1].x
+
+        return `M0,0`
+            + `${(shape
+                .line()
+                .x((d: any) => scaleX(d.x))
+                .y((d: any) => scaleY(d.y))
+                .curve(shape.curveCatmullRom)
+                (data) as string).replace('M', 'L')} ${`L ${scaleX(lastX)},0`}`
+    }
 
 
     useEffect(() => {
-        if (chartData.length) {
-            const tempPathLine = getLinePath(chartData, SVGHeight - 5, SVGWidth);
-            const tempFillLine = getFillLine(chartData, SVGHeight - 5, SVGWidth);
+        if (todayData.length) {
+            const tempPathLine = getLinePath(todayData);
 
-            setPathLine(tempPathLine)
-            setFillLine(tempFillLine)
+            setTodayLine(tempPathLine)
         }
-    }, [chartData])
+    }, [todayData])
 
     useEffect(() => {
-        const formatData = () => {
-            const formattedData: { x: number, y: number }[] = []
-            DATA.forEach((item, index) => {
-                const x = index * STEPS
-                const y = item.steps
-                formattedData.push({ x, y })
+        if (yesterdayData.length) {
+            const tempPathLine = getLinePath(yesterdayData);
+            setYesterdayLine(tempPathLine)
+        }
+    }, [yesterdayData])
+
+    useEffect(() => {
+        const formatData = (data: any) => {
+            const formattedData: DataChart = []
+            data.forEach((item: any, index: any) => {
+                if (index > 240) {
+                    if (index % 15 === 0) {
+                        const currentTime = moment(item.timestamp, 'YYYY-MM-DD[T]HH:mm:ss')
+                        const x = currentTime.hours() * 60 + currentTime.minutes()
+                        const y = item.steps
+
+                        formattedData.push({ x, y })
+                    }
+                }
             })
-            setChartData(formattedData)
+            return formattedData
         }
-        formatData()
+
+        setYesterdayData(formatData(DATA))
+        setTodayData(formatData(DATA_24))
     }, [])
     return (
         <View>
-
             <View style={{
                 transform: [{
                     rotateX: '180deg'
@@ -126,13 +97,25 @@ export const Chart = ({ chartWidth, chartHeight }: { chartWidth: number, chartHe
                             <Stop offset="100%" stopColor="rgb(255, 255, 255)" stopOpacity={0.3} />
                         </LinearGradient>
                     </Defs>
-                    <Path strokeWidth={0} d={fillLine} strokeDasharray="10,5" stroke={"#C9E2ED"}
-                        fill={'url(#down2)'}
-                    />
-                    <Path stroke={"#247BA0"} d={pathLine} strokeWidth={2} fill={'transparent'} />
+                    <Path stroke={"#F87171"} d={yesterdayLine} strokeWidth={2} fill={'#FCA5A5'} />
+                    <Path stroke={"#047857"} d={todayLine} strokeWidth={2} fill={'#05966999'} />
                 </Svg>
+                <Cursor
+                    point={todayData[todayData.length - 1]}
+                    scaleX={scaleX}
+                    scaleY={scaleY}
+                    stroke={"#047857"}
+                    fill={'#059669'}
+                />
+                <Cursor
+                    point={yesterdayData[todayData.length - 1]}
+                    scaleX={scaleX}
+                    scaleY={scaleY}
+                    stroke={"#F87171"}
+                    fill={'#FCA5A5'}
+                />
             </View>
-            <View style={{ flexDirection: 'row',justifyContent:'space-around',marginTop:5 }}>
+            <View style={[tw`flex-row justify-around mt-1.5`]}>
 
                 <Text>4 AM</Text>
                 <Text>8 AM</Text>
@@ -142,4 +125,27 @@ export const Chart = ({ chartWidth, chartHeight }: { chartWidth: number, chartHe
             </View>
         </View>
     )
+}
+type CursorProps = {
+    point: { x: number, y: number },
+    scaleX: (value: number) => number, scaleY: (value: number) => number,
+    fill: string
+    stroke: string
+}
+const Cursor = ({ point, scaleX, scaleY, fill, stroke }: CursorProps) => {
+    if(!point) return null
+    
+    const { x, y } = point
+    
+    const CURSOR_SIZE = 15
+    const left = scaleX(x) - CURSOR_SIZE / 2
+    const top = scaleY(y) - CURSOR_SIZE / 2
+
+    return <View style={[{
+        left, top, width: CURSOR_SIZE,
+        height: CURSOR_SIZE, backgroundColor: fill,
+        borderColor: stroke,
+    },tw` absolute rounded-full border-2`]}>
+
+    </View>
 }
