@@ -31,7 +31,7 @@ export const Chart = ({ chartWidth, chartHeight }: { chartWidth: number, chartHe
     const [yesterdayData, setYesterdayData] = useState<{ x: number, y: number }[]>([])
 
     const scaleX = scaleLinear().domain([START_X, FINISH_X]).range([0, chartWidth]);
-    const scaleY = scaleLinear().domain([minSteps, maxSteps]).range([0, chartHeight - 5]);
+    const scaleY = scaleLinear().domain([minSteps, maxSteps]).range([2, SVGHeight - 5]);
 
 
     const getLinePath = (data: DataChart) => {
@@ -43,13 +43,14 @@ export const Chart = ({ chartWidth, chartHeight }: { chartWidth: number, chartHe
                 .x((d: any) => scaleX(d.x))
                 .y((d: any) => scaleY(d.y))
                 .curve(shape.curveCatmullRom)
-                (data) as string).replace('M', 'L')} ${`L ${scaleX(lastX)},0`}`
+                (data) as string)} `
     }
 
 
     useEffect(() => {
         if (todayData.length) {
             const tempPathLine = getLinePath(todayData);
+// console.log('tempPathLine: ',tempPathLine);
 
             setTodayLine(tempPathLine)
         }
@@ -63,14 +64,14 @@ export const Chart = ({ chartWidth, chartHeight }: { chartWidth: number, chartHe
     }, [yesterdayData])
 
     useEffect(() => {
-        const formatData = (data: any) => {
+        const formatData = (data: any,debug?:boolean) => {
             const formattedData: DataChart = []
             data.forEach((item: any, index: any) => {
                 if (index > 240) {
-                    if (index % 15 === 0) {
+                    if (index % 1 === 0) {
                         const currentTime = moment(item.timestamp, 'YYYY-MM-DD[T]HH:mm:ss')
                         const x = currentTime.hours() * 60 + currentTime.minutes()
-                        const y = item.steps
+                        const y = Number(item.steps) + (debug?4000:0)
 
                         formattedData.push({ x, y })
                     }
@@ -80,7 +81,8 @@ export const Chart = ({ chartWidth, chartHeight }: { chartWidth: number, chartHe
         }
 
         setYesterdayData(formatData(DATA))
-        setTodayData(formatData(DATA_24))
+        setTodayData(formatData(DATA_24,true))
+        
     }, [])
     return (
         <View>
@@ -97,8 +99,8 @@ export const Chart = ({ chartWidth, chartHeight }: { chartWidth: number, chartHe
                             <Stop offset="100%" stopColor="rgb(255, 255, 255)" stopOpacity={0.3} />
                         </LinearGradient>
                     </Defs>
-                    <Path stroke={"#F87171"} d={yesterdayLine} strokeWidth={2} fill={'#FCA5A5'} />
-                    <Path stroke={"#047857"} d={todayLine} strokeWidth={2} fill={'#05966999'} />
+                    <Path stroke={"#F87171"} d={yesterdayLine} strokeWidth={2} fill={'transparent'} />
+                    <Path stroke={"#047857"} d={todayLine} strokeWidth={2} fill={'transparent'} />
                 </Svg>
                 <Cursor
                     point={todayData[todayData.length - 1]}
@@ -137,7 +139,7 @@ const Cursor = ({ point, scaleX, scaleY, fill, stroke }: CursorProps) => {
     
     const { x, y } = point
     
-    const CURSOR_SIZE = 15
+    const CURSOR_SIZE = 15*0.8
     const left = scaleX(x) - CURSOR_SIZE / 2
     const top = scaleY(y) - CURSOR_SIZE / 2
 
