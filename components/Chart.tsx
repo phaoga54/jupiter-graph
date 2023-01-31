@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text } from 'react-native';
-import Svg, { Defs, Path, Stop, LinearGradient } from "react-native-svg";
+import Svg, { Defs, Path, Stop, LinearGradient, Line } from "react-native-svg";
 import tw from 'twrnc';
 import { scaleLinear } from "d3-scale";
 import DATA from './step_data_jan_23rd.json'
@@ -20,11 +20,14 @@ export const Chart = ({ chartWidth, chartHeight }: { chartWidth: number, chartHe
 
     const SVGHeight = chartHeight;
     const SVGWidth = chartWidth;
-    const maxSteps = Math.max(...[...DATA.map(o => o.steps), ...DATA_24.map(o => o.steps)])
+
+    const dailyLimit = 5000
+
+    const maxSteps = Math.max(...[...DATA.map(o => o.steps), ...DATA_24.map(o => o.steps),dailyLimit])
     const minSteps = Math.min(...[...DATA.map(o => o.steps), ...DATA_24.map(o => o.steps)])
 
-    const [todayLine, setTodayLine] = useState('M 0 0')
 
+    const [todayLine, setTodayLine] = useState('M 0 0')
     const [yesterdayLine, setYesterdayLine] = useState('M 0 0')
 
     const [todayData, setTodayData] = useState<{ x: number, y: number }[]>([])
@@ -35,7 +38,6 @@ export const Chart = ({ chartWidth, chartHeight }: { chartWidth: number, chartHe
 
 
     const getLinePath = (data: DataChart) => {
-        const lastX = data[data.length - 1].x
 
         return `M0,0`
             + `${(shape
@@ -50,7 +52,6 @@ export const Chart = ({ chartWidth, chartHeight }: { chartWidth: number, chartHe
     useEffect(() => {
         if (todayData.length) {
             const tempPathLine = getLinePath(todayData);
-// console.log('tempPathLine: ',tempPathLine);
 
             setTodayLine(tempPathLine)
         }
@@ -64,25 +65,23 @@ export const Chart = ({ chartWidth, chartHeight }: { chartWidth: number, chartHe
     }, [yesterdayData])
 
     useEffect(() => {
-        const formatData = (data: any,debug?:boolean) => {
+        const formatData = (data: any, debug?: boolean) => {
             const formattedData: DataChart = []
-            data.forEach((item: any, index: any) => {
-                if (index > 240) {
-                    if (index % 1 === 0) {
-                        const currentTime = moment(item.timestamp, 'YYYY-MM-DD[T]HH:mm:ss')
-                        const x = currentTime.hours() * 60 + currentTime.minutes()
-                        const y = Number(item.steps) + (debug?4000:0)
+            data.forEach((item: any) => {
+                const currentTime = moment(item.timestamp, 'YYYY-MM-DD[T]HH:mm:ss')
+                const minutes = currentTime.hours() * 60 + currentTime.minutes()
+                if (minutes >= 240) {
+                    const x = minutes
+                    const y = Number(item.steps) + (debug ? 4000 : 0)
 
-                        formattedData.push({ x, y })
-                    }
+                    formattedData.push({ x, y })
                 }
             })
             return formattedData
         }
 
         setYesterdayData(formatData(DATA))
-        setTodayData(formatData(DATA_24,true))
-        
+        setTodayData(formatData(DATA_24))
     }, [])
     return (
         <View>
@@ -101,21 +100,46 @@ export const Chart = ({ chartWidth, chartHeight }: { chartWidth: number, chartHe
                     </Defs>
                     <Path stroke={"#F87171"} d={yesterdayLine} strokeWidth={2} fill={'transparent'} />
                     <Path stroke={"#047857"} d={todayLine} strokeWidth={2} fill={'transparent'} />
+
                 </Svg>
-                <Cursor
-                    point={todayData[todayData.length - 1]}
-                    scaleX={scaleX}
-                    scaleY={scaleY}
-                    stroke={"#047857"}
-                    fill={'#059669'}
-                />
-                <Cursor
-                    point={yesterdayData[todayData.length - 1]}
-                    scaleX={scaleX}
-                    scaleY={scaleY}
-                    stroke={"#F87171"}
-                    fill={'#FCA5A5'}
-                />
+                {
+                    (todayData?.length && yesterdayData?.length) ? <>
+                        <Cursor
+                            point={todayData[todayData.length - 1]}
+                            scaleX={scaleX}
+                            scaleY={scaleY}
+                            stroke={"#047857"}
+                            fill={'#059669'}
+                        />
+                        <Cursor
+                            point={{
+                                x: todayData[todayData.length - 1]?.x,
+                                y: yesterdayData.find(value => value.x === todayData[todayData.length - 1].x)?.y || 0
+                            }}
+                            scaleX={scaleX}
+                            scaleY={scaleY}
+                            stroke={"#F87171"}
+                            fill={'#FCA5A5'}
+                        />
+                    </>
+                        : null
+                }
+                <View style={{ position: 'absolute', top: scaleY(dailyLimit),}}>
+                    <Svg height={2} width={SVGWidth} style={{ alignSelf: 'center' }}>
+                        <Line
+                            stroke="gray"
+                            strokeDasharray="7, 7"
+                            strokeWidth={2}
+                            x1="0"
+                            y1="0"
+                            x2={SVGWidth}
+                            y2={2}
+                        />
+                    </Svg>
+                    <Text style={[tw`mt-1 text-sm text-gray-500`, {
+                        transform: [{ rotateX: '-180deg' }],
+                    }]}>Daily limit</Text>
+                </View>
             </View>
             <View style={[tw`flex-row justify-around mt-1.5`]}>
 
@@ -135,11 +159,11 @@ type CursorProps = {
     stroke: string
 }
 const Cursor = ({ point, scaleX, scaleY, fill, stroke }: CursorProps) => {
-    if(!point) return null
-    
+    if (!point) return null
+
     const { x, y } = point
-    
-    const CURSOR_SIZE = 15*0.8
+
+    const CURSOR_SIZE = 15 * 0.8
     const left = scaleX(x) - CURSOR_SIZE / 2
     const top = scaleY(y) - CURSOR_SIZE / 2
 
@@ -147,7 +171,7 @@ const Cursor = ({ point, scaleX, scaleY, fill, stroke }: CursorProps) => {
         left, top, width: CURSOR_SIZE,
         height: CURSOR_SIZE, backgroundColor: fill,
         borderColor: stroke,
-    },tw` absolute rounded-full border-2`]}>
+    }, tw` absolute rounded-full border-2`]}>
 
     </View>
 }
