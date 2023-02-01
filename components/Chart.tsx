@@ -21,7 +21,7 @@ export const Chart = ({ chartWidth, chartHeight }: { chartWidth: number, chartHe
     const SVGHeight = chartHeight;
     const SVGWidth = chartWidth;
 
-    const dailyLimit = 5000
+    const dailyLimit = 500
 
     const maxSteps = Math.max(...[...DATA.map(o => o.steps), ...DATA_24.map(o => o.steps),dailyLimit])
     const minSteps = Math.min(...[...DATA.map(o => o.steps), ...DATA_24.map(o => o.steps)])
@@ -44,7 +44,7 @@ export const Chart = ({ chartWidth, chartHeight }: { chartWidth: number, chartHe
                 .line()
                 .x((d: any) => scaleX(d.x))
                 .y((d: any) => scaleY(d.y))
-                .curve(shape.curveCatmullRom)
+                .curve(shape.curveBasis)
                 (data) as string)} `
     }
 
@@ -92,15 +92,8 @@ export const Chart = ({ chartWidth, chartHeight }: { chartWidth: number, chartHe
                 height: SVGHeight
             }}>
                 <Svg width={SVGWidth} height={SVGHeight} viewBox={`${0} ${0} ${SVGWidth} ${SVGHeight}`}>
-                    <Defs>
-                        <LinearGradient id="down2" x1="0%" y1="0%" x2="0%" y2="100%">
-                            <Stop offset="30%" stopColor="rgb(153, 255, 206)" stopOpacity={1} />
-                            <Stop offset="100%" stopColor="rgb(255, 255, 255)" stopOpacity={0.3} />
-                        </LinearGradient>
-                    </Defs>
                     <Path stroke={"#F87171"} d={yesterdayLine} strokeWidth={2} fill={'transparent'} />
                     <Path stroke={"#047857"} d={todayLine} strokeWidth={2} fill={'transparent'} />
-
                 </Svg>
                 {
                     (todayData?.length && yesterdayData?.length) ? <>
