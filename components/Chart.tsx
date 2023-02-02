@@ -135,21 +135,21 @@ export const Chart = ({ chartWidth, chartHeight }: { chartWidth: number, chartHe
                 </View>
             </View>
             <View style={[tw`flex-row justify-between mt-1.5`]}>
-                <View style={[tw`flex-1`,{borderLeftWidth:1,borderColor:'red',height:10}]}>
+                <View style={[tw`flex-1`]}>
                     <Text style={tw`absolute left-[-16px]`}>4 AM</Text>
                 </View>
-                <View style={[tw`flex-1`,{borderLeftWidth:1,borderColor:'red',height:10}]}>
+                <View style={[tw`flex-1`]}>
                     <Text style={tw`absolute left-[-16px]`}>8 AM</Text>
                 </View>
-                <View style={[tw`flex-1`,{borderLeftWidth:1,borderColor:'red',height:10}]}>
+                <View style={[tw`flex-1`]}>
                     <Text style={tw`absolute left-[-18px]`}>12 PM</Text>
 
                 </View>
-                <View style={[tw`flex-1`,{borderLeftWidth:1,borderColor:'red',height:10}]}>
+                <View style={[tw`flex-1`]}>
                     <Text style={tw`absolute left-[-16px]`}>4 PM</Text>
 
                 </View>
-                <View style={[tw`flex-1`,{borderLeftWidth:1,borderRightWidth:1,borderColor:'red',height:10}]}>
+                <View style={[tw`flex-1`]}>
                     <Text style={tw`absolute left-[-16px]`}>8 PM</Text>
                     <Text style={tw`absolute right-[-16px]`}>12 AM</Text>
                 </View>
