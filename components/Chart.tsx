@@ -10,6 +10,7 @@ import moment from 'moment'
 
 const START_X = 4 * 60
 const FINISH_X = 24 * 60
+
 type DataChart = {
     x: number
     y: number
@@ -23,7 +24,7 @@ export const Chart = ({ chartWidth, chartHeight }: { chartWidth: number, chartHe
 
     const dailyLimit = 500
 
-    const maxSteps = Math.max(...[...DATA.map(o => o.steps), ...DATA_24.map(o => o.steps),dailyLimit])
+    const maxSteps = Math.max(...[...DATA.map(o => o.steps), ...DATA_24.map(o => o.steps), dailyLimit])
     const minSteps = Math.min(...[...DATA.map(o => o.steps), ...DATA_24.map(o => o.steps)])
 
 
@@ -37,8 +38,7 @@ export const Chart = ({ chartWidth, chartHeight }: { chartWidth: number, chartHe
     const scaleY = scaleLinear().domain([minSteps, maxSteps]).range([2, SVGHeight - 5]);
 
 
-    const getLinePath = (data: DataChart) => {
-
+    const getLinePath = (data: any) => {
         return `M0,0`
             + `${(shape
                 .line()
@@ -84,7 +84,7 @@ export const Chart = ({ chartWidth, chartHeight }: { chartWidth: number, chartHe
         setTodayData(formatData(DATA_24))
     }, [])
     return (
-        <View>
+        <View style={tw`self-center`}>
             <View style={{
                 transform: [{
                     rotateX: '180deg'
@@ -117,7 +117,7 @@ export const Chart = ({ chartWidth, chartHeight }: { chartWidth: number, chartHe
                     </>
                         : null
                 }
-                <View style={{ position: 'absolute', top: scaleY(dailyLimit),}}>
+                <View style={{ position: 'absolute', top: scaleY(dailyLimit), }}>
                     <Svg height={2} width={SVGWidth} style={{ alignSelf: 'center' }}>
                         <Line
                             stroke="gray"
@@ -134,13 +134,25 @@ export const Chart = ({ chartWidth, chartHeight }: { chartWidth: number, chartHe
                     }]}>Daily limit</Text>
                 </View>
             </View>
-            <View style={[tw`flex-row justify-around mt-1.5`]}>
+            <View style={[tw`flex-row justify-between mt-1.5`]}>
+                <View style={[tw`flex-1`,{borderLeftWidth:1,borderColor:'red',height:10}]}>
+                    <Text style={tw`absolute left-[-16px]`}>4 AM</Text>
+                </View>
+                <View style={[tw`flex-1`,{borderLeftWidth:1,borderColor:'red',height:10}]}>
+                    <Text style={tw`absolute left-[-16px]`}>8 AM</Text>
+                </View>
+                <View style={[tw`flex-1`,{borderLeftWidth:1,borderColor:'red',height:10}]}>
+                    <Text style={tw`absolute left-[-18px]`}>12 PM</Text>
 
-                <Text>4 AM</Text>
-                <Text>8 AM</Text>
-                <Text>12 PM</Text>
-                <Text>4 PM</Text>
-                <Text>8 PM</Text>
+                </View>
+                <View style={[tw`flex-1`,{borderLeftWidth:1,borderColor:'red',height:10}]}>
+                    <Text style={tw`absolute left-[-16px]`}>4 PM</Text>
+
+                </View>
+                <View style={[tw`flex-1`,{borderLeftWidth:1,borderRightWidth:1,borderColor:'red',height:10}]}>
+                    <Text style={tw`absolute left-[-16px]`}>8 PM</Text>
+                    <Text style={tw`absolute right-[-16px]`}>12 AM</Text>
+                </View>
             </View>
         </View>
     )

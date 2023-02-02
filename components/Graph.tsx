@@ -38,7 +38,7 @@ const Graph = () => {
           <View style={{ height: 200, marginTop: 10, width: '100%' }}
             onLayout={(event) => {
               let { width } = event.nativeEvent.layout;
-              setChartWidth(width) 
+              setChartWidth(width-10) 
               
             }}
           >
